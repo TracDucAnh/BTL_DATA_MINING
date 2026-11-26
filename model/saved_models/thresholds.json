@@ -1,0 +1,126 @@
+{
+  "target_sensitivity": 0.85,
+  "models": {
+    "naive_bayes": {
+      "model": "naive_bayes",
+      "display_name": "Naive Bayes",
+      "best_params": {
+        "var_smoothing": 1e-12
+      },
+      "candidates": 11,
+      "cv_roc_auc_mean": 0.8310354374307863,
+      "cv_roc_auc_std": 0.008593467257636763,
+      "oof_roc_auc": 0.8297079439252336,
+      "threshold": 0.1472382732329862,
+      "oof_accuracy_at_0.5": 0.757328990228013,
+      "oof_precision_at_0.5": 0.6633165829145728,
+      "oof_recall_at_0.5": 0.616822429906542,
+      "oof_f1_at_0.5": 0.639225181598063,
+      "oof_specificity_at_0.5": 0.8325,
+      "oof_accuracy_at_threshold": 0.7214983713355049,
+      "oof_precision_at_threshold": 0.56656346749226,
+      "oof_recall_at_threshold": 0.8551401869158879,
+      "oof_f1_at_threshold": 0.6815642458100558,
+      "oof_specificity_at_threshold": 0.65
+    },
+    "decision_tree_id3": {
+      "model": "decision_tree_id3",
+      "display_name": "Decision Tree (ID3)",
+      "best_params": {
+        "class_weight": "balanced",
+        "max_depth": 6,
+        "min_samples_leaf": 20
+      },
+      "candidates": 72,
+      "cv_roc_auc_mean": 0.813656561461794,
+      "cv_roc_auc_std": 0.0211572803173005,
+      "oof_roc_auc": 0.8111974299065422,
+      "threshold": 0.35955056179775274,
+      "oof_accuracy_at_0.5": 0.741042345276873,
+      "oof_precision_at_0.5": 0.6037735849056604,
+      "oof_recall_at_0.5": 0.7476635514018691,
+      "oof_f1_at_0.5": 0.6680584551148225,
+      "oof_specificity_at_0.5": 0.7375,
+      "oof_accuracy_at_threshold": 0.7084690553745928,
+      "oof_precision_at_threshold": 0.5522388059701493,
+      "oof_recall_at_threshold": 0.8644859813084113,
+      "oof_f1_at_threshold": 0.6739526411657559,
+      "oof_specificity_at_threshold": 0.625
+    },
+    "decision_tree_cart": {
+      "model": "decision_tree_cart",
+      "display_name": "Decision Tree (CART)",
+      "best_params": {
+        "class_weight": "balanced",
+        "max_depth": 5,
+        "min_samples_leaf": 40
+      },
+      "candidates": 72,
+      "cv_roc_auc_mean": 0.8066708194905869,
+      "cv_roc_auc_std": 0.00807474273355555,
+      "oof_roc_auc": 0.8018866822429906,
+      "threshold": 0.2814423922603345,
+      "oof_accuracy_at_0.5": 0.762214983713355,
+      "oof_precision_at_0.5": 0.6440677966101694,
+      "oof_recall_at_0.5": 0.7102803738317757,
+      "oof_f1_at_0.5": 0.6755555555555556,
+      "oof_specificity_at_0.5": 0.79,
+      "oof_accuracy_at_threshold": 0.6302931596091205,
+      "oof_precision_at_threshold": 0.48293963254593175,
+      "oof_recall_at_threshold": 0.8598130841121495,
+      "oof_f1_at_threshold": 0.6184873949579832,
+      "oof_specificity_at_threshold": 0.5075
+    },
+    "svm_rbf": {
+      "model": "svm_rbf",
+      "display_name": "SVM (RBF)",
+      "best_params": {
+        "C": 30,
+        "class_weight": "balanced",
+        "gamma": 0.003
+      },
+      "candidates": 84,
+      "cv_roc_auc_mean": 0.8500083056478406,
+      "cv_roc_auc_std": 0.010292282932230707,
+      "oof_roc_auc": 0.8502336448598131,
+      "threshold": 0.2543339173061781,
+      "oof_accuracy_at_0.5": 0.7882736156351792,
+      "oof_precision_at_0.5": 0.7413793103448276,
+      "oof_recall_at_0.5": 0.602803738317757,
+      "oof_f1_at_0.5": 0.6649484536082474,
+      "oof_specificity_at_0.5": 0.8875,
+      "oof_accuracy_at_threshold": 0.7100977198697068,
+      "oof_precision_at_threshold": 0.5548780487804879,
+      "oof_recall_at_threshold": 0.8504672897196262,
+      "oof_f1_at_threshold": 0.6715867158671587,
+      "oof_specificity_at_threshold": 0.635
+    },
+    "mlp": {
+      "model": "mlp",
+      "display_name": "MLP",
+      "best_params": {
+        "alpha": 3.0,
+        "hidden_layer_sizes": [
+          16,
+          8
+        ],
+        "learning_rate_init": 0.001
+      },
+      "candidates": 60,
+      "cv_roc_auc_mean": 0.8542455703211518,
+      "cv_roc_auc_std": 0.008721465908419483,
+      "oof_roc_auc": 0.8529672897196261,
+      "threshold": 0.2962902401652347,
+      "oof_accuracy_at_0.5": 0.7882736156351792,
+      "oof_precision_at_0.5": 0.7282608695652174,
+      "oof_recall_at_0.5": 0.6261682242990654,
+      "oof_f1_at_0.5": 0.6733668341708543,
+      "oof_specificity_at_0.5": 0.875,
+      "oof_accuracy_at_threshold": 0.737785016286645,
+      "oof_precision_at_threshold": 0.5852090032154341,
+      "oof_recall_at_threshold": 0.8504672897196262,
+      "oof_f1_at_threshold": 0.6933333333333334,
+      "oof_specificity_at_threshold": 0.6775
+    }
+  }
+}

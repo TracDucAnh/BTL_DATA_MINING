@@ -1,0 +1,11 @@
+,Outcome = 0 (N = 400),Outcome = 0 (N = 400),Outcome = 0 (N = 400),Outcome = 1 (N = 214),Outcome = 1 (N = 214),Outcome = 1 (N = 214)
+,Observed,Median,IQR,Observed,Median,IQR
+Predictor,,,,,,
+Pregnancies,400,2.0,4.0,214,4.0,6.75
+Glucose,398,108.0,30.0,212,141.5,49.0
+BloodPressure,388,70.0,16.0,203,76.0,15.0
+SkinThickness,292,27.0,14.0,147,33.0,12.0
+Insulin,215,100.0,94.0,109,168.0,101.0
+BMI,393,30.1,9.2,212,34.35,8.05
+DiabetesPedigreeFunction,400,0.34,0.35,214,0.46,0.46
+Age,400,27.0,14.0,214,36.0,16.75

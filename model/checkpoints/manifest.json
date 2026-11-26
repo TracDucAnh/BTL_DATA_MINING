@@ -1,9 +1,38 @@
 {
+  "manifest_version": 1,
+  "task": "Pima diabetes screening: probability that Outcome = 1",
+  "default_model": "mlp",
+  "default_model_rule": "highest cross-validated ROC-AUC on the training split",
   "target_sensitivity": 0.85,
+  "feature_columns": [
+    "Pregnancies",
+    "Glucose",
+    "BloodPressure",
+    "SkinThickness",
+    "Insulin",
+    "BMI",
+    "DiabetesPedigreeFunction",
+    "Age"
+  ],
+  "zero_as_missing_columns": [
+    "Glucose",
+    "BloodPressure",
+    "SkinThickness",
+    "Insulin",
+    "BMI"
+  ],
+  "environment": {
+    "python": "3.12.11",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.5",
+    "pandas": "3.1.1",
+    "joblib": "1.6.0"
+  },
   "models": {
     "naive_bayes": {
       "model": "naive_bayes",
       "display_name": "Naive Bayes",
+      "file": "naive_bayes.joblib",
       "best_params": {
         "var_smoothing": 1e-12
       },
@@ -26,6 +55,7 @@
     "decision_tree_id3": {
       "model": "decision_tree_id3",
       "display_name": "Decision Tree (ID3)",
+      "file": "decision_tree_id3.joblib",
       "best_params": {
         "class_weight": "balanced",
         "max_depth": 6,
@@ -50,6 +80,7 @@
     "decision_tree_cart": {
       "model": "decision_tree_cart",
       "display_name": "Decision Tree (CART)",
+      "file": "decision_tree_cart.joblib",
       "best_params": {
         "class_weight": "balanced",
         "max_depth": 5,
@@ -74,6 +105,7 @@
     "svm_rbf": {
       "model": "svm_rbf",
       "display_name": "SVM (RBF)",
+      "file": "svm_rbf.joblib",
       "best_params": {
         "C": 30,
         "class_weight": "balanced",
@@ -98,6 +130,7 @@
     "mlp": {
       "model": "mlp",
       "display_name": "MLP",
+      "file": "mlp.joblib",
       "best_params": {
         "alpha": 3.0,
         "hidden_layer_sizes": [

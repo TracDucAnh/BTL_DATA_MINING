@@ -1,10 +1,8 @@
 """Step 3: evaluate the trained models on the held-out Pima test split."""
 
-import json
 import sys
 from pathlib import Path
 
-import joblib
 import matplotlib
 
 matplotlib.use("Agg")
@@ -24,7 +22,8 @@ from eda_preprocessing.preprocessing import (  # noqa: E402
     TARGET_COLUMN,
     load_pima_csv,
 )
-from model.train import DISPLAY_NAMES, MODELS_DIR, REPORTS_DIR, THRESHOLDS_PATH  # noqa: E402
+from model.inference import load_manifest, load_model  # noqa: E402
+from model.train import DISPLAY_NAMES, REPORTS_DIR  # noqa: E402
 
 FIGURES_DIR = REPORTS_DIR / "figures"
 DEFAULT_THRESHOLD = 0.5
@@ -199,17 +198,18 @@ def plot_threshold_tradeoff(y_true: np.ndarray, scores: dict, thresholds: dict) 
 
 def main() -> None:
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    training = json.loads(THRESHOLDS_PATH.read_text())
-    model_names = list(training["models"])
-    thresholds = {name: training["models"][name]["threshold"] for name in model_names}
+    manifest = load_manifest()
+    model_names = list(manifest["models"])
 
     test = load_pima_csv(RAW_DIR / "test_raw.csv")
     X_test, y_test = test[FEATURE_COLUMNS], test[TARGET_COLUMN].to_numpy()
     print(f"Test split: {len(test):,} rows | positives: {int(y_test.sum())} ({y_test.mean():.1%})")
 
-    pipelines = {name: joblib.load(MODELS_DIR / f"{name}.joblib") for name in model_names}
-    check_processed_consistency(pipelines[model_names[0]], test)
-    scores = {name: pipeline.predict_proba(X_test)[:, 1] for name, pipeline in pipelines.items()}
+    # Load through model.inference, the same path the app backend uses.
+    models = {name: load_model(name) for name in model_names}
+    thresholds = {name: model.threshold for name, model in models.items()}
+    check_processed_consistency(models[model_names[0]].pipeline, test)
+    scores = {name: model.predict_proba(X_test) for name, model in models.items()}
 
     rows = []
     for name in model_names:
@@ -227,10 +227,10 @@ def main() -> None:
     columns = ["threshold", "roc_auc", "accuracy", "precision", "recall", "f1", "specificity"]
     print("\n" + results[columns].round(3).to_string())
 
-    best = max(model_names, key=lambda name: training["models"][name]["cv_roc_auc_mean"])
+    best = manifest["default_model"]
     best_row = results.loc[(best, "screening")]
     print(
-        f"\nModel selected by training CV ROC-AUC: {DISPLAY_NAMES[best]} -> test AUC {best_row['roc_auc']:.3f} "
+        f"\nDefault model (highest training CV ROC-AUC): {DISPLAY_NAMES[best]} -> test AUC {best_row['roc_auc']:.3f} "
         f"[{best_row['roc_auc_ci_low']:.3f}, {best_row['roc_auc_ci_high']:.3f}], "
         f"accuracy {best_row['accuracy']:.3f}, precision {best_row['precision']:.3f}, "
         f"recall {best_row['recall']:.3f}, F1 {best_row['f1']:.3f}, specificity {best_row['specificity']:.3f}"

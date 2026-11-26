@@ -62,12 +62,13 @@ Lợi ích thêm: file `.joblib` lưu lại là **một đối tượng duy nh�
 ### 2.3. Luồng xử lý
 
 ```
-train_raw.csv ──► train.py ──┬─► saved_models/<model>.joblib    (5 pipeline đã huấn luyện)
-                             ├─► saved_models/thresholds.json   (ngưỡng t*, tham số tốt nhất, điểm CV)
+train_raw.csv ──► train.py ──┬─► checkpoints/<model>.joblib    (5 checkpoint: tiền xử lý + mô hình)
+                             ├─► checkpoints/manifest.json     (ngưỡng t*, tham số, điểm CV, mô hình mặc định, môi trường)
                              └─► reports/cv_results.csv
 
-test_raw.csv  ──► evaluate.py ─┬─► reports/test_metrics.csv
- (+ các file trên)             └─► reports/figures/*.png
+checkpoints/ ──► inference.py (load_model) ──┬─► evaluate.py ─┬─► reports/test_metrics.csv
+                                             │   + test_raw   └─► reports/figures/*.png
+                                             └─► app/backend (bước 4)
 ```
 
 ---
@@ -96,7 +97,7 @@ Ghi chú hiện thực:
 
 - `GridSearchCV` với `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)`.
 - Chọn cấu hình theo **ROC-AUC** (`scoring="roc_auc"`). AUC không phụ thuộc ngưỡng, nên đo khả năng **xếp hạng** bệnh nhân theo nguy cơ.
-- Với cấu hình tốt nhất, dùng dự đoán out-of-fold (mục 3.3) để tính **Accuracy, Precision, Recall, F1, Specificity** ở ngưỡng 0.5 và ở t\* (hàm `classification_metrics`), lưu vào `cv_results.csv` / `thresholds.json`.
+- Với cấu hình tốt nhất, dùng dự đoán out-of-fold (mục 3.3) để tính **Accuracy, Precision, Recall, F1, Specificity** ở ngưỡng 0.5 và ở t\* (hàm `classification_metrics`), lưu vào `cv_results.csv` / `manifest.json`.
 
 ### 3.3. Chọn ngưỡng sàng lọc (ưu tiên Sensitivity)
 
@@ -104,7 +105,7 @@ Ngưỡng mặc định 0.5 cho Sensitivity thấp (≈ 0.48–0.76 trên test),
 
 1. Tính xác suất **out-of-fold** trên tập train bằng `cross_val_predict` (5 fold, cùng cách chia). Mỗi dòng được dự đoán bởi mô hình không nhìn thấy dòng đó.
 2. Từ đường ROC out-of-fold, chọn **ngưỡng cao nhất t\* sao cho Sensitivity ≥ 0.85** (`TARGET_SENSITIVITY`). Ngưỡng cao nhất thỏa ràng buộc đồng nghĩa với Specificity cao nhất có thể.
-3. Lưu t\* vào `thresholds.json`, dùng ở bước 3 và ở app.
+3. Lưu t\* vào `checkpoints/manifest.json`, dùng ở bước 3 và ở app.
 
 Ngưỡng được chọn **hoàn toàn trên tập train**, không nhìn tập test, nên kết quả trên test là ước lượng khách quan.
 
@@ -209,31 +210,62 @@ Chỉ số phân loại trên dự đoán out-of-fold của tập train (614 dò
 | Mô hình có yếu tố ngẫu nhiên | `random_state=42` cho DecisionTree, SVC, MLP |
 | Bootstrap | `np.random.default_rng(42)` |
 | Thư viện | Phiên bản cố định trong `requirements.txt` (Python 3.12) |
-| Kiểm chứng | Chạy `run_pipeline.sh` hai lần cho `thresholds.json`, `cv_results.csv`, `test_metrics.csv` giống nhau từng byte; bộ tiền xử lý đã lưu tái tạo chính xác `data/processed/test.csv` |
+| Kiểm chứng | Chạy `run_pipeline.sh` hai lần cho `manifest.json`, `cv_results.csv`, `test_metrics.csv` giống nhau từng byte; bộ tiền xử lý đã lưu tái tạo chính xác `data/processed/test.csv` |
 
 Thời gian chạy `train.py` khoảng 30 giây (song song hóa bằng `n_jobs=-1`; kết quả không phụ thuộc số nhân).
 
 ---
 
-## 7. Sử dụng mô hình đã lưu (giao tiếp với bước 4)
+## 7. Checkpoint & inference (giao tiếp với bước 4)
+
+### 7.1. Thư mục `model/checkpoints/`
+
+| File | Nội dung |
+|---|---|
+| `<model>.joblib` | Checkpoint = `Pipeline` đã fit hoàn chỉnh (`prepare_predictors → StandardScaler → KNNImputer → classifier`). Nhận chỉ số thô, trả xác suất. |
+| `manifest.json` | `default_model` (mô hình có CV ROC-AUC cao nhất, hiện là `mlp`), `feature_columns`, `zero_as_missing_columns`, `target_sensitivity`, `environment` (phiên bản Python/scikit-learn/numpy/pandas/joblib), và với từng mô hình: `file`, `threshold`, `best_params`, điểm CV/OOF |
+
+Checkpoint được tạo lại mỗi lần chạy `train.py` và hoàn toàn tất định (mục 6). Tổng dung lượng khoảng 300 KB, nên được commit vào repo để backend dùng ngay mà không cần train lại.
+
+### 7.2. API — `model/inference.py`
+
+| Hàm / lớp | Chức năng |
+|---|---|
+| `load_model(name=None) -> RiskModel` | Nạp một checkpoint (mặc định là `default_model`). Kết quả được cache, nên backend gọi nhiều lần cũng chỉ đọc đĩa một lần. Cảnh báo nếu phiên bản scikit-learn khác với manifest. |
+| `available_models()` | Danh sách tên checkpoint |
+| `load_manifest()` | Đọc `manifest.json` (kiểm tra `manifest_version`) |
+| `RiskModel.predict(records)` | Nhận `dict` hoặc `list[dict]` (JSON từ frontend), trả về danh sách `{model, display_name, probability, threshold, high_risk, imputed_fields}` |
+| `RiskModel.predict_proba(df)` | Nhận DataFrame 8 cột thô, trả `np.ndarray` xác suất (dùng trong `evaluate.py`) |
+| `to_frame(records)` | Validate đầu vào: từ chối field lạ, giá trị không phải số, số âm hoặc vô hạn; field thiếu / `null` / `""` → NaN để KNNImputer ước lượng |
+
+`imputed_fields` liệt kê các chỉ số không được nhập (hoặc nhập 0 ở 5 biến sinh học) và đã được mô hình ước lượng. Frontend nên hiển thị danh sách này để nhân viên y tế biết kết quả dựa trên giá trị ước lượng.
 
 ```python
-import json, sys
-import joblib, pandas as pd
+import sys
+sys.path.insert(0, "<thư mục gốc repo>")   # checkpoint tham chiếu eda_preprocessing.preprocessing
 
-sys.path.insert(0, "<thư mục gốc repo>")  # pipeline tham chiếu eda_preprocessing.preprocessing
+from model.inference import load_model
 
-pipeline = joblib.load("model/saved_models/mlp.joblib")
-threshold = json.load(open("model/saved_models/thresholds.json"))["models"]["mlp"]["threshold"]
-
-patient = pd.DataFrame([{
-    "Pregnancies": 2, "Glucose": 148, "BloodPressure": 72, "SkinThickness": 35,
-    "Insulin": 0,            # 0 hoặc NaN = chưa xét nghiệm → được KNNImputer ước lượng
+model = load_model()                         # hoặc load_model("svm_rbf")
+report = model.predict({
+    "Pregnancies": 6, "Glucose": 148, "BloodPressure": 72, "SkinThickness": 35,
+    "Insulin": 0,                            # 0 / null / bỏ trống = chưa xét nghiệm
     "BMI": 33.6, "DiabetesPedigreeFunction": 0.627, "Age": 50,
-}])
-risk = pipeline.predict_proba(patient)[0, 1]
-high_risk = risk >= threshold
+})[0]
+# {"model": "mlp", "display_name": "MLP", "probability": 0.635, "threshold": 0.296,
+#  "high_risk": True, "imputed_fields": ["Insulin"]}
 ```
+
+Dòng lệnh:
+
+```bash
+.venv/bin/python model/inference.py --list                       # * đánh dấu mô hình mặc định
+.venv/bin/python model/inference.py '{"Glucose": 148, "BMI": 33.6, "Age": 50}' --model svm_rbf
+```
+
+`evaluate.py` cũng load mô hình qua `load_model()`, nên mỗi lần đánh giá đồng thời kiểm tra luôn đường load mà backend sẽ dùng.
+
+Hướng dẫn sử dụng cho người dùng checkpoint (đơn vị đầu vào, cách đọc kết quả, ví dụ Flask, xử lý lỗi): [checkpoints/README.md](checkpoints/README.md).
 
 ---
 

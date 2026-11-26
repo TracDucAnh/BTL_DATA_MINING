@@ -58,8 +58,8 @@ Hoặc chạy từng bước (từ thư mục gốc repo):
 |---|---|---|
 | `eda_preprocessing/eda.py` | `data/raw/diabetes.csv`, `data/raw/train_raw.csv` | `eda_preprocessing/figures/*.png`, `eda_preprocessing/tables/*.csv` |
 | `eda_preprocessing/preprocessing.py` | `data/raw/diabetes.csv` | `data/raw/{train,test}_raw.csv`, `data/processed/{train,test}.csv` |
-| `model/train.py` | `data/raw/train_raw.csv` | `model/saved_models/*.joblib`, `model/saved_models/thresholds.json`, `model/reports/cv_results.csv` |
-| `model/evaluate.py` | `data/raw/test_raw.csv`, `model/saved_models/` | `model/reports/test_metrics.csv`, `model/reports/figures/*.png` |
+| `model/train.py` | `data/raw/train_raw.csv` | `model/checkpoints/*.joblib`, `model/checkpoints/manifest.json`, `model/reports/cv_results.csv` |
+| `model/evaluate.py` | `data/raw/test_raw.csv`, `model/checkpoints/` (qua `model/inference.py`) | `model/reports/test_metrics.csv`, `model/reports/figures/*.png` |
 
 EDA và xử lý dữ liệu dùng **pandas, numpy, matplotlib**; scikit-learn chỉ dùng để chia tập, KNNImputer/StandardScaler và các mô hình.
 
@@ -183,7 +183,24 @@ Script: [model/train.py](model/train.py) · Chi tiết: [model/SPEC.md §2–3](
 
 1. `GridSearchCV` trên 11–84 cấu hình mỗi mô hình, **Stratified 5-fold CV**, chọn theo **ROC-AUC**.
 2. **Chọn ngưỡng sàng lọc t\*** từ xác suất out-of-fold trên train: lấy ngưỡng cao nhất mà **Sensitivity ≥ 0.85**, tức là giữ Specificity cao nhất có thể.
-3. Lưu pipeline vào `model/saved_models/<model>.joblib`, ngưỡng và tham số vào `thresholds.json`.
+3. Lưu **checkpoint** của từng mô hình vào `model/checkpoints/<model>.joblib`, kèm `manifest.json` (ngưỡng t\*, tham số, điểm CV, mô hình mặc định, danh sách cột đầu vào, phiên bản thư viện).
+
+**Checkpoint & inference.** Backend không cần biết chi tiết huấn luyện, chỉ cần gọi [model/inference.py](model/inference.py):
+
+```python
+import sys; sys.path.insert(0, "<thư mục gốc repo>")
+from model.inference import load_model
+
+model = load_model()            # mô hình mặc định trong manifest (MLP); hoặc load_model("svm_rbf")
+model.predict({"Pregnancies": 6, "Glucose": 148, "BloodPressure": 72, "Insulin": 0,
+               "BMI": 33.6, "DiabetesPedigreeFunction": 0.627, "Age": 50})
+# [{"model": "mlp", "probability": 0.63, "threshold": 0.296, "high_risk": true,
+#   "imputed_fields": ["SkinThickness", "Insulin"], ...}]
+```
+
+Hướng dẫn đầy đủ (đầu vào, đơn vị, cách đọc kết quả, chọn mô hình, ví dụ Flask, xử lý lỗi): **[model/checkpoints/README.md](model/checkpoints/README.md)**.
+
+Thử nhanh bằng dòng lệnh: `.venv/bin/python model/inference.py --list` hoặc `.venv/bin/python model/inference.py '{"Glucose": 148, "BMI": 33.6, "Age": 50}'`.
 
 Kết quả trên tập train. Các chỉ số phân loại tính từ dự đoán out-of-fold (OOF) tại ngưỡng t\*:
 
@@ -252,7 +269,8 @@ Phân tích chi tiết (vì sao SVM `balanced` vẫn có Sensitivity thấp ở 
 
 - Mọi nguồn ngẫu nhiên đều cố định `random_state = 42`: chia tập, CV fold, DecisionTree, SVC, MLP, bootstrap.
 - Phiên bản thư viện được pin trong [requirements.txt](requirements.txt).
-- Đã kiểm chứng: chạy `run_pipeline.sh` hai lần cho `thresholds.json`, `cv_results.csv`, `test_metrics.csv` và các bảng EDA **giống nhau từng byte**.
+- Đã kiểm chứng: chạy `run_pipeline.sh` hai lần cho `manifest.json`, `cv_results.csv`, `test_metrics.csv` và các bảng EDA **giống nhau từng byte**.
+- `manifest.json` ghi lại phiên bản scikit-learn đã dùng để lưu checkpoint; `load_model()` cảnh báo nếu môi trường chạy backend dùng phiên bản khác.
 - `evaluate.py` kiểm tra bộ tiền xử lý đã lưu tái tạo đúng `data/processed/test.csv`; sai lệch sẽ làm script dừng với lỗi.
 
 ---
@@ -279,7 +297,8 @@ Phân tích chi tiết (vì sao SVM `balanced` vẫn có Sensitivity thấp ở 
 │   ├── SPEC.md                  #   Đặc tả kiến trúc, hiện thực, kết quả
 │   ├── train.py                 #   GridSearchCV + chọn ngưỡng sàng lọc
 │   ├── evaluate.py              #   Đánh giá trên test + biểu đồ
-│   ├── saved_models/            #   5 pipeline .joblib + thresholds.json
+│   ├── inference.py             #   API load checkpoint + dự đoán (dùng cho backend)
+│   ├── checkpoints/             #   5 checkpoint .joblib + manifest.json + README (hướng dẫn sử dụng)
 │   └── reports/                 #   cv_results.csv, test_metrics.csv, figures/
 │
 └── app/                         # Bước 4 (chưa hiện thực)

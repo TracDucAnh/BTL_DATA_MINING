@@ -1,6 +1,7 @@
 """Step 2: tune and train the four classifier families on the Pima training split."""
 
 import json
+import platform
 import sys
 import warnings
 from pathlib import Path
@@ -8,6 +9,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.exceptions import ConvergenceWarning
@@ -24,6 +26,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from eda_preprocessing.preprocessing import (  # noqa: E402
     FEATURE_COLUMNS,
+    INVALID_ZERO_COLUMNS,
     RANDOM_STATE,
     RAW_DIR,
     TARGET_COLUMN,
@@ -32,9 +35,9 @@ from eda_preprocessing.preprocessing import (  # noqa: E402
     load_pima_csv,
 )
 
-MODELS_DIR = PROJECT_ROOT / "model" / "saved_models"
+from model.inference import CHECKPOINT_DIR, MANIFEST_PATH, MANIFEST_VERSION  # noqa: E402
+
 REPORTS_DIR = PROJECT_ROOT / "model" / "reports"
-THRESHOLDS_PATH = MODELS_DIR / "thresholds.json"
 
 CV_FOLDS = 5
 # Screening target: the decision threshold is lowered until cross-validated
@@ -147,13 +150,14 @@ def train_model(name: str, X: pd.DataFrame, y: pd.Series) -> dict:
         metrics = classification_metrics(y, (oof_scores >= cutoff).astype(int))
         oof_metrics.update({f"oof_{metric}_at_{label}": value for metric, value in metrics.items()})
 
-    joblib.dump(search.best_estimator_, MODELS_DIR / f"{name}.joblib")
+    joblib.dump(search.best_estimator_, CHECKPOINT_DIR / f"{name}.joblib")
 
     # Short names ("C", not "model__estimator__C") and plain Python numbers for JSON.
     params = {key.split("__")[-1]: getattr(value, "item", lambda: value)() for key, value in search.best_params_.items()}
     return {
         "model": name,
         "display_name": DISPLAY_NAMES[name],
+        "file": f"{name}.joblib",
         "best_params": params,
         "candidates": len(cv_results["params"]),
         "cv_roc_auc_mean": float(cv_results["mean_test_score"][best]),
@@ -164,8 +168,32 @@ def train_model(name: str, X: pd.DataFrame, y: pd.Series) -> dict:
     }
 
 
+def write_manifest(summaries: list[dict]) -> None:
+    """Describe the checkpoints so the backend knows what to load and how to call it."""
+    default_model = max(summaries, key=lambda summary: summary["cv_roc_auc_mean"])["model"]
+    manifest = {
+        "manifest_version": MANIFEST_VERSION,
+        "task": "Pima diabetes screening: probability that Outcome = 1",
+        "default_model": default_model,
+        "default_model_rule": "highest cross-validated ROC-AUC on the training split",
+        "target_sensitivity": TARGET_SENSITIVITY,
+        "feature_columns": FEATURE_COLUMNS,
+        "zero_as_missing_columns": INVALID_ZERO_COLUMNS,
+        "environment": {
+            "python": platform.python_version(),
+            "scikit-learn": sklearn.__version__,
+            "numpy": np.__version__,
+            "pandas": pd.__version__,
+            "joblib": joblib.__version__,
+        },
+        "models": {summary["model"]: summary for summary in summaries},
+    }
+    MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, default=str) + "\n")
+    print(f"Default model for inference: {DISPLAY_NAMES[default_model]}")
+
+
 def main() -> None:
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
@@ -186,18 +214,11 @@ def main() -> None:
             f" | {summary['best_params']}"
         )
 
-    THRESHOLDS_PATH.write_text(json.dumps(
-        {
-            "target_sensitivity": TARGET_SENSITIVITY,
-            "models": {summary["model"]: summary for summary in summaries},
-        },
-        indent=2,
-        default=str,
-    ))
-    table = pd.DataFrame(summaries).set_index("model")
+    write_manifest(summaries)
+    table = pd.DataFrame(summaries).drop(columns="file").set_index("model")
     table["best_params"] = table["best_params"].map(lambda params: json.dumps(params, default=str))
     table.round(4).to_csv(REPORTS_DIR / "cv_results.csv")
-    print(f"\nSaved models to {MODELS_DIR.relative_to(PROJECT_ROOT)}/ and CV summary to "
+    print(f"\nSaved checkpoints + manifest to {CHECKPOINT_DIR.relative_to(PROJECT_ROOT)}/ and CV summary to "
           f"{(REPORTS_DIR / 'cv_results.csv').relative_to(PROJECT_ROOT)}")
 
 

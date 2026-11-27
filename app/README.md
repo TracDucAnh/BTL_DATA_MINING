@@ -2,28 +2,35 @@
 
 Ứng dụng demo học thuật dùng các checkpoint đã lưu ở [Bước 2 và 3](../model/checkpoints/README.md). Backend gọi `model.inference.load_model()` để nhận chỉ số thô và trả điểm xác suất, ngưỡng của mô hình cùng các chỉ số đã được ước lượng.
 
-## Chạy trên WSL
+## Setup và chạy web app
 
-Mở terminal WSL tại thư mục gốc `BTL_DATA_MINING`. App dùng Python 3.12 và các checkpoint có sẵn trong repo.
+Mở terminal ở thư mục gốc `BTL_DATA_MINING`, nơi có `requirements.txt`. Dùng [Python 3.12](https://www.python.org/downloads/) để khớp với môi trường của các checkpoint trong repo.
 
-### Chuẩn bị môi trường
+Nếu chạy cả trên Windows và WSL, dùng checkout và `.venv` riêng cho từng môi trường. Khi đã có `.venv` tạo bằng Python 3.12 trên cùng hệ điều hành, có thể bắt đầu từ lệnh cài thư viện.
 
-Khối lệnh này tạo `.venv` nếu cần, rồi cài các thư viện theo phiên bản trong `requirements.txt`.
+### Windows (PowerShell)
 
-```bash
-if [ ! -x .venv/bin/python ]; then
-  python3.12 -m venv .venv
-fi
-.venv/bin/python -m pip install -r requirements.txt
+Kiểm tra Python bằng `py -3.12 --version`. Các lệnh sau gọi trực tiếp Python trong `.venv`.
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m app.backend.server
 ```
 
-### Khởi động app
+### WSL, macOS và Linux
+
+Kiểm tra Python bằng `python3.12 --version`. Trên WSL, chạy các lệnh trong terminal của bản phân phối Linux.
 
 ```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m app.backend.server
 ```
 
-Giữ terminal này mở và truy cập [http://127.0.0.1:5000/](http://127.0.0.1:5000/) trên trình duyệt. Chọn **Điền mẫu** rồi **Chạy dự đoán** để kiểm tra. Có thể chọn **In / lưu PDF** khi kết quả hiện ra.
+### Mở và thử ứng dụng
+
+Giữ terminal chạy Flask và truy cập [http://127.0.0.1:5000/](http://127.0.0.1:5000/) trên trình duyệt. Chọn **Điền mẫu** rồi **Chạy dự đoán** để kiểm tra. Chọn **In / lưu PDF** nếu cần lưu kết quả.
 
 Nhấn `Ctrl+C` trong terminal chạy Flask để dừng app.
 

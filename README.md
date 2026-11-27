@@ -301,7 +301,7 @@ Phân tích chi tiết (vì sao SVM `balanced` vẫn có Sensitivity thấp ở 
 │   ├── checkpoints/             #   5 checkpoint .joblib + manifest.json + README (hướng dẫn sử dụng)
 │   └── reports/                 #   cv_results.csv, test_metrics.csv, figures/
 │
-└── app/                         # Bước 4 (chưa hiện thực)
+└── app/                         # Bước 4 — Flask API và giao diện web
     ├── backend/
     └── frontend/
 ```

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#15343b">
+  <title>Sàng lọc nguy cơ tiểu đường | Pima</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#measurement-form">Đến form nhập chỉ số</a>
+  <header class="topbar">
+    <div class="frame topbar-inner">
+      <a class="brand" href="/" aria-label="Pima, trang chủ">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Pima<span class="brand-separator"> / </span><span class="brand-detail">Data Mining</span></span>
+      </a>
+      <nav class="top-nav" aria-label="Điều hướng">
+        <a href="#inputs">Nhập chỉ số</a>
+        <a href="#result">Kết quả</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="frame">
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-copy">
+        <p class="eyebrow"><span class="intro-dot" aria-hidden="true"></span> Mô hình Pima Indians Diabetes</p>
+        <h1 id="page-title">Sàng lọc nguy cơ tiểu đường</h1>
+        <p>Nhập các chỉ số đo để xem điểm dự đoán và đối chiếu với phân bố trong tập huấn luyện.</p>
+      </div>
+      <div class="intro-rings" aria-hidden="true"><span></span><span></span><span></span><i></i><i></i><i></i></div>
+    </section>
+
+    <div class="workspace">
+      <section class="card input-card" id="inputs" aria-labelledby="input-heading">
+        <div class="card-heading form-heading">
+          <div>
+            <h2 id="input-heading">Chỉ số đầu vào</h2>
+          </div>
+          <button class="button button-secondary" type="button" id="load-sample">Điền mẫu</button>
+        </div>
+
+        <form id="measurement-form">
+          <div class="field model-field">
+            <label for="model">Mô hình dự đoán</label>
+            <select id="model" name="model" disabled>
+              <option>Đang tải mô hình…</option>
+            </select>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="Glucose">Đường huyết sau 2 giờ</label>
+              <div class="input-wrap">
+                <input id="Glucose" name="Glucose" type="number" min="0" step="any" inputmode="decimal" placeholder="Chưa nhập" aria-describedby="Glucose-unit">
+                <span class="unit" id="Glucose-unit">mg/dL</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="BloodPressure">Huyết áp tâm trương</label>
+              <div class="input-wrap">
+                <input id="BloodPressure" name="BloodPressure" type="number" min="0" step="any" inputmode="decimal" placeholder="Chưa nhập" aria-describedby="BloodPressure-unit">
+                <span class="unit" id="BloodPressure-unit">mmHg</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="BMI">Chỉ số BMI</label>
+              <div class="input-wrap">
+                <input id="BMI" name="BMI" type="number" min="0" step="any" inputmode="decimal" placeholder="Chưa nhập" aria-describedby="BMI-unit">
+                <span class="unit" id="BMI-unit">kg/m²</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="Age">Tuổi</label>
+              <div class="input-wrap">
+                <input id="Age" name="Age" type="number" min="0" step="1" inputmode="numeric" placeholder="Chưa nhập" aria-describedby="Age-unit">
+                <span class="unit" id="Age-unit">năm</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="Insulin">Insulin sau 2 giờ</label>
+              <div class="input-wrap">
+                <input id="Insulin" name="Insulin" type="number" min="0" step="any" inputmode="decimal" placeholder="Chưa nhập" aria-describedby="Insulin-unit">
+                <span class="unit" id="Insulin-unit">µU/mL</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="SkinThickness">Nếp gấp da cơ tam đầu</label>
+              <div class="input-wrap">
+                <input id="SkinThickness" name="SkinThickness" type="number" min="0" step="any" inputmode="decimal" placeholder="Chưa nhập" aria-describedby="SkinThickness-unit">
+                <span class="unit" id="SkinThickness-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="Pregnancies">Số lần mang thai</label>
+              <div class="input-wrap">
+                <input id="Pregnancies" name="Pregnancies" type="number" min="0" step="1" inputmode="numeric" placeholder="Chưa nhập" aria-describedby="Pregnancies-unit">
+                <span class="unit" id="Pregnancies-unit">lần</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="DiabetesPedigreeFunction">Điểm tiền sử gia đình</label>
+              <div class="input-wrap">
+                <input id="DiabetesPedigreeFunction" name="DiabetesPedigreeFunction" type="number" min="0" step="any" inputmode="decimal" placeholder="Chưa nhập">
+              </div>
+            </div>
+          </div>
+
+          <p class="help-note">Dùng đường huyết tương sau 2 giờ nghiệm pháp OGTT.</p>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <div class="form-actions">
+            <button class="button button-primary" type="submit" id="submit-prediction" disabled>
+              <span id="submit-label">Chạy dự đoán</span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="button button-plain" type="reset" id="reset-form">Xóa dữ liệu</button>
+          </div>
+        </form>
+      </section>
+
+      <div class="analysis">
+        <section class="card result-card" id="result" aria-labelledby="result-heading">
+          <div class="card-heading result-heading">
+            <div>
+              <h2 id="result-heading" tabindex="-1">Kết quả sàng lọc</h2>
+              <p id="result-model-label">Điểm và ngưỡng quyết định từ checkpoint.</p>
+            </div>
+            <button class="button button-secondary" type="button" id="print-report" hidden>In / lưu PDF</button>
+          </div>
+
+          <div class="empty-state" id="result-empty">
+            <span class="empty-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+            <p>Chưa có dự đoán</p>
+            <span>Nhập chỉ số và chạy mô hình để xem kết quả.</span>
+          </div>
+
+          <div id="result-data" hidden>
+            <div class="score-row">
+              <div>
+                <p class="metric-label">Điểm xác suất của mô hình</p>
+                <p class="score-value" id="score"></p>
+              </div>
+              <span class="risk-badge" id="risk-badge"></span>
+            </div>
+
+            <div class="scale" id="risk-scale" role="img">
+              <div class="scale-track">
+                <div class="scale-value"></div>
+                <div class="scale-threshold"></div>
+              </div>
+              <div class="scale-labels" aria-hidden="true">
+                <span>0%</span><span id="threshold-label"></span><span>100%</span>
+              </div>
+            </div>
+            <p id="missing-summary" class="missing-summary"></p>
+          </div>
+
+        </section>
+
+        <section class="card reference-card" id="reference" aria-labelledby="reference-heading">
+          <div class="card-heading">
+            <div>
+              <h2 id="reference-heading">Đối chiếu với tập huấn luyện</h2>
+              <p>Radar thể hiện phân vị của các chỉ số đã nhập</p>
+            </div>
+          </div>
+          <div id="reference-empty" class="reference-empty">Biểu đồ xuất hiện sau khi chạy dự đoán.</div>
+          <div id="reference-data" hidden>
+            <canvas id="radar" class="radar" role="img" aria-label="Biểu đồ radar phân vị, số liệu chi tiết ở bảng bên dưới">
+              Phân vị của mỗi chỉ số được ghi trong bảng bên dưới.
+            </canvas>
+            <div class="legend" aria-label="Chú giải">
+              <span><i class="legend-dot" aria-hidden="true"></i>Trong khoảng P5–P95</span>
+              <span><i class="legend-dot outside" aria-hidden="true"></i>Ngoài khoảng P5–P95</span>
+            </div>
+            <div class="table-wrap" tabindex="0" aria-label="Bảng đối chiếu phân vị">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Chỉ số</th>
+                    <th scope="col">Giá trị</th>
+                    <th scope="col">Phân vị</th>
+                    <th scope="col">P5–P95</th>
+                  </tr>
+                </thead>
+                <tbody id="reference-rows"></tbody>
+              </table>
+            </div>
+            <p class="reference-note">P5–P95 là khoảng phân vị từ dữ liệu huấn luyện. Radar sẽ để trống các chỉ số không được nhập.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <p id="announcements" class="sr-only" role="status"></p>
+  </main>
+</body>
+</html>
